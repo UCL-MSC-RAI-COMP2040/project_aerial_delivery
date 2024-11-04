@@ -1,10 +1,21 @@
-# Project Gazebo Aruco
+# Project Aerial Delivery
 
-This tutorial project simulates a drone detecting and following aruco fiducial markers.
+This tutorial project simulates a drone delivery flying task
 
 This project is based on aerostack2 drone flying framework which uses ROS2 but has a nice python api
 
-Tutorial is [here](https://ucl-delta.github.io/project_gazebo_aruco/)
+<!-- Tutorial is [here](https://ucl-delta.github.io/project_gazebo_aruco/) -->
+
+
+**IN PROGRESS**
+
+To ensure that the plugin builds, please place this project also in your ros2 src folder along with aerostack2 and colcon build it. Then run the launch_as2 as before from this repository. 
+
+TODOS:
+- Custom gripping/pickup: either use aerostack2 gripper, or use the fake gripper plugin in sim_config/plugins
+
+README.md needs updating
+
 
 ## Usage
 
