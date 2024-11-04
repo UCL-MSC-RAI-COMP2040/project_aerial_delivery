@@ -9,7 +9,7 @@ usage() {
     echo "      -r: record rosbag"
     echo "      -t: launch keyboard teleoperation"
     echo "      -n: drone namespace, default is cf0"
-    echo "      -w: world file"
+    echo "      -w: world file if simulated, default: sim_config/world.json"
     echo "      -a: auto run mission"
 }
 
@@ -88,8 +88,9 @@ else
   simulation_config="${world_file}"
 fi
 
-export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:"$(pwd)/models"
-export IGN_GAZEBO_RESOURCE_PATH=$IGN_GAZEBO_RESOURCE_PATH:"$(pwd)/models"
+# Ensure this folders gazebo packages are on the path for both aerostack2 and gazebo to read...
+export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:"$(pwd)/sim_config/gazebo/models":"$(pwd)/sim_config/gazebo/worlds":"$(pwd)/sim_config/gazebo/plugins"
+export IGN_GAZEBO_RESOURCE_PATH=$IGN_GAZEBO_RESOURCE_PATH:"$(pwd)/sim_config/gazebo/models":"$(pwd)/sim_config/gazebo/worlds":"$(pwd)/sim_config/gazebo/plugins"
 
 # Generate the list of drone namespaces
 drone_ns=()

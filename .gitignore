@@ -4,3 +4,4 @@ rosbags/*
 */rosbags
 __pycache__/*
 site/*
+.vscode/*

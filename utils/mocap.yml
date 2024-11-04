@@ -1,5 +1,6 @@
 attach: true
 root: ./
+pre_window: source setup.bash; tmux set mouse on
 startup_window: mocap
 windows:
   - mocap:

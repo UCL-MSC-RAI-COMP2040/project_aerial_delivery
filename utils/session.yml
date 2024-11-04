@@ -27,6 +27,7 @@ end
 %>
 attach: false
 root: ./
+pre_window: source setup.bash; tmux set mouse on
 startup_window: alphanumeric_viewer
 windows:
   - alphanumeric_viewer:

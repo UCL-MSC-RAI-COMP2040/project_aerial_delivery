@@ -6,6 +6,7 @@ drone_namespace = @settings["drone_namespace"]
 
 attach: true
 root: ./
+pre_window: source setup.bash; tmux set mouse on
 startup_window: keyboard_teleop
 windows:
   - keyboard_teleop:
