@@ -1,5 +1,14 @@
 #include "dock_sim.hpp"
 
+// Register the plugin with Gazebo Fortress
+GZ_ADD_PLUGIN(
+    gazebo::PickupPlugin,
+    gz::sim::System,
+    gz::sim::ISystemUpdate)
+
+// Optional alias for the plugin
+// GZ_ADD_PLUGIN_ALIAS(gazebo::PickupPlugin, "gazebo::PickupPlugin")
+
 namespace gazebo {
 
 // Constructor
@@ -9,22 +18,28 @@ PickupPlugin::PickupPlugin()
 	physics(nullptr),
 	joint(nullptr),
 	jointCounter(0)
-	{
-	}
+{
+}
 
 
 // Destructor
 PickupPlugin::~PickupPlugin() {}
 
-void PickupPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
+void PickupPlugin::Load(gz::sim::EntityComponentManager &_ecm, sdf::ElementPtr _sdf) {
 
 	// Create a GazeboRos node instead of a common ROS node.
 	// Pass it SDF parameters so common options like namespace and remapping
 	// can be handled.
 	ros_node_ = gazebo_ros::Node::Get(_sdf);
-	
-	this->model = _model;
-	this->world = this->model->GetWorld();
+
+	// Obtain the model entity (model pointer is no longer passed directly)
+    gz::sim::Entity modelEntity = gz::sim::Model(_sdf->GetParent());
+    this->model = std::make_shared<gz::physics::Model>(modelEntity);
+
+    // Retrieve the world entity
+    this->world = std::make_shared<gz::sim::World
+
+	// Get Physics	
 	this->physics = this->world->Physics();
 
 	// // Get parameters specified in the sdf file.
@@ -74,6 +89,11 @@ void PickupPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
 	// 	RCLCPP_INFO(this->ros_node_->get_logger(), "Attempting to initially attach");
 	// 	this->initial_attaching_timer = this->ros_node_->create_wall_timer(std::chrono::duration<double>(0.1), [this](){this->attach();});
 	// }
+}
+
+void PickupPlugin::Update(const gz::sim::UpdateInfo &_info, gz::sim::EntityComponentManager &_ecm) {
+    // Your logic to check distance or conditions for attaching/detaching joints
+    // Example: if (distance < threshold) { attachJoint(); }
 }
 
 // Check for objects within a certain vertical and horizontal offset of the drone

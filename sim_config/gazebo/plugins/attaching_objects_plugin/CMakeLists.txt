@@ -22,34 +22,46 @@ if(WIN32)
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(gazebo_dev REQUIRED)
-find_package(gazebo_msgs REQUIRED)
+# find_package(gazebo_msgs REQUIRED)
 find_package(gazebo_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
-# find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
-# find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
-# find_package(tf2 REQUIRED)
-# find_package(tf2_geometry_msgs REQUIRED)
-# find_package(tf2_ros REQUIRED)
-# find_package(trajectory_msgs REQUIRED)
 
-link_directories(${gazebo_dev_LIBRARY_DIRS})
 
-# AttachVehiclesPlugin
-add_library(AttachVehiclesPlugin SHARED
+# Referencing: https://github.com/gazebosim/ros_gz_project_template/blob/fortress/ros_gz_example_gazebo/CMakeLists.txt 
+find_package(ignition-cmake2 REQUIRED)
+find_package(ignition-plugin1 REQUIRED COMPONENTS register)
+set(GZ_PLUGIN_VER ${ignition-plugin1_VERSION_MAJOR})
+find_package(ignition-common4 REQUIRED COMPONENTS profiler)
+set(GZ_COMMON_VER ${ignition-common4_VERSION_MAJOR})
+find_package(ignition-gazebo6 REQUIRED)
+set(GZ_SIM_VER ${ignition-gazebo6_VERSION_MAJOR})
+find_package(ignition-physics5 REQUIRED)
+set(GZ_PHYSICS_VER ${ignition-physics5_VERSION_MAJOR})
+
+
+# AttachingObjectsPlugin
+set(PLUGIN_NAME AttachingObjectsPlugin)
+add_library(${PLUGIN_NAME} SHARED
   src/dock_sim.cpp
 )
-target_include_directories(AttachVehiclesPlugin PUBLIC include)
-ament_target_dependencies(AttachVehiclesPlugin
-  "gazebo_dev"
-  "gazebo_ros"
-  "rclcpp"
-  "geometry_msgs"
+set_property(TARGET ${PLUGIN_NAME} PROPERTY CXX_STANDARD 17)
+target_include_directories(${PLUGIN_NAME} PUBLIC include)
+target_link_libraries(${PLUGIN_NAME}
+  ignition-gazebo${GZ_SIM_VER}::ignition-gazebo${GZ_SIM_VER}
+  ignition-plugin${GZ_PLUGIN_VER}::ignition-plugin${GZ_PLUGIN_VER}
+  ignition-common${GZ_COMMON_VER}::ignition-common${GZ_COMMON_VER}
+  ignition-physics${GZ_PHYSICS_VER}::ignition-physics${GZ_PHYSICS_VER}
 )
-ament_export_libraries(AttachVehiclesPlugin)
+ament_target_dependencies( ${PLUGIN_NAME}
+  rclcpp
+  gazebo_ros
+  geometry_msgs
+  std_msgs
+)
+ament_export_libraries(${PLUGIN_NAME})
 
 # ament_export_include_directories(include)
 ament_export_dependencies(rclcpp)
@@ -76,7 +88,7 @@ install(DIRECTORY include/
         DESTINATION include)
 
 install(TARGETS
-    AttachVehiclesPlugin
+  ${PLUGIN_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)

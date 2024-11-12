@@ -2,7 +2,7 @@
     "world_name": "empty_delivery",
     "drones": [
         {
-            "model_type": "quadrotor_base",
+            "model_type": "quadrotor_gripper_base",
             "model_name": "cf0",
             "xyz": [
                 0.0,

@@ -16,107 +16,31 @@ TODOS:
 
 README.md needs updating
 
+## Install
 
-## Usage
+### Aerostack2 
 
-There are three ways you can run this project depending on your situation or operating system. 
-- Linux: All 3 ways will work
-- Windows: Docker and Docker with VNC (You will need the WSL2 backend)
-- Max OSX: Docker with VNC
+> System must be running Ubuntu 22.04 with ROS2 humble and Gazebo Fortress Installed
 
-Note that you will need at least 20Gb free on your system to avoid lockup. Graphics card and 16Gb RAM is recommended. 
-
-> **Windows** You will need to install WSL2 for Docker and these docker containers to work. [Instructions Here](https://learn.microsoft.com/en-us/windows/wsl/install)
-
-See Documentation for detailed instructions
-
-### Local
-
-Install Ubuntu 22.04, ROS2 Humble, Ignition Gazebo Fortress as per their instructions
-
-Setup and build Aerostack2 (we use version 1.1.2)
-
-Get this project locally
+Please first ensure that **you have installed and our version of aerstack2** within your workspace:
 
 ```
-mkdir -p ~/aerostack2_ws/src
-cd ~/aerostack2_ws/src
-git clone https://github.com/ucl-delta/project_gazebo_aruco.git
+cd <my_ws>/src/
+git clone https://github.com/UCL-MSC-RAI-COMP2040/aerostack2.git
 ```
 
-Run the example using 
-
+and that it has been built in the workspace root. 
 ```
-./launch_as2.bash -s -t
-```
-
-### Docker
-
-Ensure Docker or Docker Desktop is installed on your machine
-
-First your will need to clone this project somewhere (doesn't need to be in a ros2 workspace)
-
-```
-git clone https://github.com/ucl-delta/project_gazebo_aruco.git
+colcon build --symlink-install
 ```
 
-To build and/or run the container run the script
+### Aerial Delivery Project
 
-This container is based on Ubuntu 22.04, ROS2 Humble and Ignition Gazebo Fortress
 
-```
-./docker/docker_start.bash
-```
+> *NOTE* If on Ubuntu 22.04 running ROS2 Humble you will need to patch a known problem in jsoncpp build system which hasn't yet been backported. Copy the contents of the file `sim_config/gazebo/jsoncpp-namespaced-targets.cmake` to `/usr/lib/x86_64-linux-gnu/cmake/jsoncpp/jsoncpp-namespaced-targets.cmake`
+>
+> See [link](https://github.com/open-source-parsers/jsoncpp/pull/1435/files) for more info
 
-After building for a while, this will drop you inside the docker container.
-
-The container will have live mounted this project into `/ros2/project_gazebo_aruco` so that any changes made to this repository outside of the container will be reflected inside. 
-
-Inside the container, navigate to that repository and run the example.
-
-```
-cd /ros2/project_gazebo_aruco
-./launch_as2.bash -s -t
-```
-
-> Note that you can utilise a GPU if you install the `nvidia-container-toolkit`. Pass the `-nvidia` argument to `docker_start.bash`
-
-### Docker with VNC
-
-This will enable all of the ROS2 to run standalone with no outside network connections. It makes use of a Virtual Network Computing interface to share a the container's desktop GUI with the outside world. In this case your browser! 
-
-Ensure Docker or Docker Desktop is installed on your machine
-
-First your will need to clone this project somewhere (doesn't need to be in a ros2 workspace)
-
-```
-git clone https://github.com/ucl-delta/project_gazebo_aruco.git
-```
-
-To build and/or run the container run the script
-
-This container is based on Ubuntu 22.04, ROS2 Humble and Ignition Gazebo Fortress
-
-```
-./docker/docker_vnc_start.bash
-```
-
-After building for a while, this will say that it has started the VNC server
-
-> Note: The first time you build it it may time out. Run the command again and it should comeplete the build. 
-
-Go into a browser and navigate to `https://127.0.0.1:6080` and press `connect`. This will drop you into an ubunut22.04 desktop environment with all the things you need! 
-
-The container will have live mounted this project into `/ros2/project_gazebo_aruco` so that any changes made to this repository outside of the container will be reflected inside. 
-
-Open up a terminal (`terminator`) and navigate to `/ros2/project_gazebo_aruco` to run the example. 
-
-```
-cd /ros2/project_gazebo_aruco
-./launch_as2.bash -s -t
-```
-
-> Note that you can utilise a GPU if you install the `nvidia-container-toolkit`. Pass the `-nvidia` argument to `docker_vnc_start.bash` when running the vnc. 
 
 ## Contact
 

@@ -5,60 +5,55 @@
 #include <string>
 #include <vector>
 
-#include "gazebo/gazebo.hh"
-#include <gazebo/physics/physics.hh>
-#include "gazebo/physics/PhysicsTypes.hh"
-#include <gazebo/transport/TransportTypes.hh>
-#include <gazebo/common/Time.hh>
-#include <gazebo/common/Plugin.hh>
-#include <gazebo/common/Events.hh>
-#include "gazebo/msgs/msgs.hh"
-#include "gazebo/transport/transport.hh"
+#include <gz/sim/System.hh>
+#include <gz/sim/components/Physics.hh>
+#include <gz/transport/Node.hh>
+// #include <gz/msgs/msgs.hh>
+// #include <gz/sensors/Sensor.hh>
 
 #include <gazebo_ros/node.hpp>
 #include <rclcpp/rclcpp.hpp>
-
 #include <std_msgs/msg/bool.hpp>
 
 namespace gazebo {
 
-class PickupPlugin : public ModelPlugin {
-	public:
-		PickupPlugin();
-		virtual ~PickupPlugin();
-		void Load( physics::ModelPtr _model, sdf::ElementPtr);
+class PickupPlugin : public gz::sim::System,
+                     public gz::sim::ISystemUpdate {
+    public:
+        PickupPlugin();
+        virtual ~PickupPlugin();
+        void Load(gz::sim::EntityComponentManager &_ecm, sdf::ElementPtr);
 
-	private:
-	   	bool attach();
+		// Update method called at every simulation step
+        void Update(const gz::sim::UpdateInfo &_info, gz::sim::EntityComponentManager &_ecm) override;
 
-	   	bool detach();
+    private:
+        bool attach();
+        bool detach();
+        gz::sim::ModelPtr findNearbyObject();
 
-		physics::ModelPtr findNearbyObject();
+        /// Node for ROS communication.
+        gazebo_ros::Node::SharedPtr ros_node_;
 
-		  /// Node for ROS communication.
-  		gazebo_ros::Node::SharedPtr ros_node_;
+        rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr dockStatusPub;
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr dockControlSub;
 
-		rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr dockStatusPub;
-		rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr dockControlSub;
+        rclcpp::TimerBase::SharedPtr initial_attaching_timer;
 
-		rclcpp::TimerBase::SharedPtr initial_attaching_timer;
-		
-		physics::ModelPtr model;
-		physics::WorldPtr world;
-		physics::PhysicsEnginePtr physics;
-		physics::JointPtr joint;
-		physics::LinkPtr sensor_link;
+        gz::sim::ModelPtr model;
+        gz::sim::WorldPtr world;
+        gz::physics::PhysicsEnginePtr physics;
+        gz::physics::JointPtr joint;
+        gz::physics::LinkPtr sensor_link;
 
-		std::string pickup_object_allowable_prefix = "";
+        std::string pickup_object_allowable_prefix = "";
 
-		double allowable_offset_height = 0.15;
-		double allowable_offset_horizontal = 0.2;
+        double allowable_offset_height = 0.15;
+        double allowable_offset_horizontal = 0.2;
 
-		int jointCounter;
-
-   	};
+        int jointCounter;
+    };
 
 }
-
 
 #endif  // GAZEBO_PLUGINS__GAZEBO_ROS_TEMPLATE_HPP_
