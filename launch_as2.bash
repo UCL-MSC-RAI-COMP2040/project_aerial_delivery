@@ -92,6 +92,8 @@ fi
 export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:"$(pwd)/sim_config/gazebo/models":"$(pwd)/sim_config/gazebo/worlds":"$(pwd)/sim_config/gazebo/plugins"
 export IGN_GAZEBO_RESOURCE_PATH=$IGN_GAZEBO_RESOURCE_PATH:"$(pwd)/sim_config/gazebo/models":"$(pwd)/sim_config/gazebo/worlds":"$(pwd)/sim_config/gazebo/plugins"
 
+export AS2_EXTRA_DRONE_MODELS=quadrotor_gripper_base
+
 # Generate the list of drone namespaces
 drone_ns=()
 for ((i=0; i<${num_drones}; i++)); do

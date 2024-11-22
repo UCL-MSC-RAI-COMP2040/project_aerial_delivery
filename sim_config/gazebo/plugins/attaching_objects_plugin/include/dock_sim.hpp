@@ -6,45 +6,64 @@
 #include <vector>
 
 #include <gz/sim/System.hh>
-#include <gz/sim/components/Physics.hh>
 #include <gz/transport/Node.hh>
+#include <gz/sim/Model.hh>
+#include <gz/sim/World.hh>
+#include <gz/sim/Link.hh>
+#include <gz/sim/Joint.hh>
+#include <gz/sim/Util.hh>
+#include <gz/math.hh>
+#include <gz/sim/components/DetachableJoint.hh>
 // #include <gz/msgs/msgs.hh>
 // #include <gz/sensors/Sensor.hh>
 
-#include <gazebo_ros/node.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/bool.hpp>
+// #include <gazebo_ros/node.hpp>
+// #include <rclcpp/rclcpp.hpp>
+// #include <std_msgs/msg/bool.hpp>
 
-namespace gazebo {
+// using namespace ignition;
+// using namespace gazebo;
+namespace gzplugin {
 
 class PickupPlugin : public gz::sim::System,
-                     public gz::sim::ISystemUpdate {
+                     public gz::sim::ISystemConfigure{
     public:
         PickupPlugin();
         virtual ~PickupPlugin();
-        void Load(gz::sim::EntityComponentManager &_ecm, sdf::ElementPtr);
+
+        // Implement Configure callback, provided by ISystemConfigure
+        // and called once at startup.
+        void Configure(const gz::sim::Entity &_entity,
+                               const std::shared_ptr<const sdf::Element> &_sdf,
+                               gz::sim::EntityComponentManager &_ecm,
+                               gz::sim::EventManager &/*_eventMgr*/) override;
+            
+        // void Load(gz::sim::EntityComponentManager &_ecm, sdf::ElementPtr);
 
 		// Update method called at every simulation step
-        void Update(const gz::sim::UpdateInfo &_info, gz::sim::EntityComponentManager &_ecm) override;
+        // void Update(const gz::sim::UpdateInfo &_info, gz::sim::EntityComponentManager &_ecm) override;
 
     private:
         bool attach();
         bool detach();
-        gz::sim::ModelPtr findNearbyObject();
+        void OnControlMsg(const ignition::msgs::Boolean &_msg);
+        gz::sim::Entity findNearbyObject();
 
-        /// Node for ROS communication.
-        gazebo_ros::Node::SharedPtr ros_node_;
+        // Node for trasnport to send to ROS2 eventually
+        gz::transport::Node node;
+        gz::transport::Node::Publisher dockStatusPub;
 
-        rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr dockStatusPub;
-        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr dockControlSub;
+        // rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr dockStatusPub;
+        // rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr dockControlSub;
 
-        rclcpp::TimerBase::SharedPtr initial_attaching_timer;
-
-        gz::sim::ModelPtr model;
-        gz::sim::WorldPtr world;
-        gz::physics::PhysicsEnginePtr physics;
-        gz::physics::JointPtr joint;
-        gz::physics::LinkPtr sensor_link;
+        // rclcpp::TimerBase::SharedPtr initial_attaching_timer;
+        
+        gz::sim::EntityComponentManager *ecm{nullptr};
+        gz::sim::Model model;
+        gz::sim::World world;
+        // gz::physics::PhysicsEnginePtr physics;
+        gz::sim::Joint joint;
+        gz::sim::Link sensor_link;
 
         std::string pickup_object_allowable_prefix = "";
 
@@ -54,6 +73,6 @@ class PickupPlugin : public gz::sim::System,
         int jointCounter;
     };
 
-}
+};
 
 #endif  // GAZEBO_PLUGINS__GAZEBO_ROS_TEMPLATE_HPP_

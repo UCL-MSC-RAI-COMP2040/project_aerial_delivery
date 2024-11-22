@@ -102,10 +102,9 @@
             <motorType>velocity</motorType>
         </plugin>
 
-        <plugin name="attaching_objects_plugin" filename="libAttachingObjectsPlugin.so">
-            <ros>
-                <namespace>pickup</namespace>
-            </ros>
+        <plugin 
+            filename="libAttachingObjectsPlugin" 
+            name="gzplugin::PickupPlugin">
             <!-- Match variables within the controller cpp file -->
             <pickup_prefix>package</pickup_prefix>
             <allowable_offset_height>1.0</allowable_offset_height>
