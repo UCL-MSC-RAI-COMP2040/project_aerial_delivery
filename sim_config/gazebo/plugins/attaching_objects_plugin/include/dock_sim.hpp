@@ -26,7 +26,8 @@
 namespace gzplugin {
 
 class PickupPlugin : public gz::sim::System,
-                     public gz::sim::ISystemConfigure{
+                     public gz::sim::ISystemConfigure,
+                     public gz::sim::ISystemPostUpdate{
     public:
         PickupPlugin();
         virtual ~PickupPlugin();
@@ -42,6 +43,9 @@ class PickupPlugin : public gz::sim::System,
 
 		// Update method called at every simulation step
         // void Update(const gz::sim::UpdateInfo &_info, gz::sim::EntityComponentManager &_ecm) override;
+         
+        void PostUpdate(const gz::sim::UpdateInfo &_info,
+                const gz::sim::EntityComponentManager &_ecm) override;
 
     private:
         bool attach();
@@ -65,6 +69,7 @@ class PickupPlugin : public gz::sim::System,
         gz::sim::Joint joint;
         gz::sim::Link sensor_link;
 
+        std::string robot_namespace = "";
         std::string pickup_object_allowable_prefix = "";
 
         double allowable_offset_height = 0.15;

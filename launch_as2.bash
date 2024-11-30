@@ -22,9 +22,6 @@ while getopts "sve:mrtnaw:" opt; do
     v )
       visualise="true"
       ;;
-    m )
-      swarm="true"
-      ;;
     e )
       estimator_plugin="${OPTARG}"
       ;;
@@ -71,7 +68,6 @@ if [[ ${simulated} == "false" && -z ${estimator_plugin} ]]; then
   exit 1
 fi
 
-swarm=${swarm:="false"}
 visualise=${visualise:="false"}
 estimator_plugin=${estimator_plugin:="ground_truth"}  # default ign_gz
 record_rosbag=${record_rosbag:="false"}
@@ -80,13 +76,8 @@ drone_namespace=${drone_namespace:="cf"}
 auto_run=${auto_run:="false"}
 world_file=${world_file:="sim_config/world.json"}
 
-if [[ ${swarm} == "true" ]]; then
-  num_drones=2
-  simulation_config="sim_config/world_swarm.json"
-else
-  num_drones=1
-  simulation_config="${world_file}"
-fi
+num_drones=1
+simulation_config="${world_file}"
 
 # Ensure this folders gazebo packages are on the path for both aerostack2 and gazebo to read...
 export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:"$(pwd)/sim_config/gazebo/models":"$(pwd)/sim_config/gazebo/worlds":"$(pwd)/sim_config/gazebo/plugins"

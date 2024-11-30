@@ -5,7 +5,8 @@
 IGNITION_ADD_PLUGIN(
     gzplugin::PickupPlugin,
     gz::sim::System,
-	gzplugin::PickupPlugin::ISystemConfigure)
+	gzplugin::PickupPlugin::ISystemConfigure,
+	gzplugin::PickupPlugin::ISystemPostUpdate)
 
 // Optional alias for the plugin
 IGNITION_ADD_PLUGIN_ALIAS(gzplugin::PickupPlugin, "gzplugin::PickupPlugin")
@@ -55,6 +56,9 @@ void PickupPlugin::Configure(const gz::sim::Entity &_entity,
 	// this->physics = this->world->Physics();
 
 	// // // Get parameters specified in the sdf file.
+	if (_sdf->HasElement("robotNamespace")) {
+		this->robot_namespace = _sdf->Get<std::string>("robotNamespace");
+	}
 	if (_sdf->HasElement("allowable_offset_height")) {
 		this->allowable_offset_height = _sdf->Get<double>("allowable_offset_height");
 	}
@@ -76,8 +80,8 @@ void PickupPlugin::Configure(const gz::sim::Entity &_entity,
 	}
 
 	// // Create Publisher and Subscriber for ROS2 to interact with this
-	this->dockStatusPub = node.Advertise<ignition::msgs::Boolean>("status");
-	this->node.Subscribe("control", &PickupPlugin::OnControlMsg, this);
+	this->dockStatusPub = node.Advertise<ignition::msgs::Boolean>(this->robot_namespace + "/gripper/status");
+	this->node.Subscribe(this->robot_namespace+"/gripper/control", &PickupPlugin::OnControlMsg, this);
 
 	ignmsg << "Publisher initialised on status" << std::endl;
 	ignmsg << "Subscriber initialised on control" << std::endl;
@@ -107,11 +111,12 @@ void PickupPlugin::OnControlMsg(const ignition::msgs::Boolean &_msg)
 	}
 }
 
-// void PickupPlugin::Update(const gz::sim::UpdateInfo &_info, gz::sim::EntityComponentManager &_ecm)
-// {
-//     // Your logic to check distance or conditions for attaching/detaching joints
-//     // Example: if (distance < threshold) { attachJoint(); }
-// }
+void PickupPlugin::PostUpdate(const gz::sim::UpdateInfo &_info, const gz::sim::EntityComponentManager &_ecm)
+{
+    // Your logic to check distance or conditions for attaching/detaching joints
+    // Example: if (distance < threshold) { attachJoint(); }
+	ignmsg << "SampleSystem::PostUpdate" << std::endl;
+}
 
 // Check for objects within a certain vertical and horizontal offset of the drone
 gz::sim::Entity PickupPlugin::findNearbyObject(){

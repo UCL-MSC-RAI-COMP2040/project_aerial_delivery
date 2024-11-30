@@ -43,6 +43,8 @@ windows:
             namespace:=<%= drone_namespace %>
             use_sim_time:=<%= simulation %>
             simulation_config_file:=<%= simulation_config %>
+        - ros2 launch sim_config/gazebo/launch/plugin_gz_bridges.launch.py
+            namespace:=<%= drone_namespace %>
   <%- elsif not simulation and base_launch %>
         - ros2 launch as2_platform_crazyflie crazyflie_swarm_launch.py
             platform_config_file:=<%= platform_config_file %>

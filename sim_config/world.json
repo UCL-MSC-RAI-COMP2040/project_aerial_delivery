@@ -26,8 +26,8 @@
     ],
     "objects": [
         {
-            "model_type": "aruco_id14_marker",
-            "model_name": "id14_1",
+            "model_type": "package_1",
+            "model_name": "package_1",
             "xyz": [
                 2.0,
                 0.0,
