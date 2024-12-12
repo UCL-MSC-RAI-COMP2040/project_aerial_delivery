@@ -7,7 +7,7 @@
             "xyz": [
                 0.0,
                 0.0,
-                0.3
+                0.5
             ],
             "rpy": [
                 0,
@@ -28,6 +28,20 @@
         {
             "model_type": "package_1",
             "model_name": "package_1",
+            "xyz": [
+                0.0,
+                0.0,
+                0.01
+            ],
+            "rpy": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "model_type": "package_1",
+            "model_name": "package_2",
             "xyz": [
                 2.0,
                 0.0,

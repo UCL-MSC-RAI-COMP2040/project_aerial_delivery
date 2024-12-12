@@ -5,7 +5,7 @@
 IGNITION_ADD_PLUGIN(
     gzplugin::PickupPlugin,
     gz::sim::System,
-	gzplugin::PickupPlugin::ISystemConfigure,
+	gzplugin::PickupPlugin::ISystemConfigure, //)
 	gzplugin::PickupPlugin::ISystemPostUpdate)
 
 // Optional alias for the plugin
@@ -48,9 +48,13 @@ void PickupPlugin::Configure(const gz::sim::Entity &_entity,
 	// // Obtain the model entity (model pointer is no longer passed directly)
     // gz::sim::Entity modelEntity = gz::sim::Model(_sdf->GetParent());
     this->model = gz::sim::Model(_entity); //std::make_shared<gz::physics::Model>(modelEntity);
+	if(!this->model.Valid(_ecm))
+	{
+		ignerr << "PickupPlugin should be attached to a model entity, failed to initialise" << std::endl;
+		return;
+	}
 
-    // // Retrieve the world entity
-    this->world = gz::sim::World(_entity);
+	// World is initialised in the postupdate
 
 	// // Get Physics	
 	// this->physics = this->world->Physics();
@@ -81,10 +85,19 @@ void PickupPlugin::Configure(const gz::sim::Entity &_entity,
 
 	// // Create Publisher and Subscriber for ROS2 to interact with this
 	this->dockStatusPub = node.Advertise<ignition::msgs::Boolean>(this->robot_namespace + "/gripper/status");
-	this->node.Subscribe(this->robot_namespace+"/gripper/control", &PickupPlugin::OnControlMsg, this);
+	if (!this->dockStatusPub)
+	{
+		ignerr << "Error advertising topic [" << this->robot_namespace + "/gripper/status" << "]" << std::endl;
+		return;
+	}
+	if(!this->node.Subscribe(this->robot_namespace+"/gripper/control", &PickupPlugin::OnControlMsg, this))
+	{
+		ignerr << "Error subscribing to topic [" << this->robot_namespace+"/gripper/control" << "]" << std::endl;
+		return;
+	}
 
-	ignmsg << "Publisher initialised on status" << std::endl;
-	ignmsg << "Subscriber initialised on control" << std::endl;
+	ignmsg << "Publisher initialised on " << this->robot_namespace + "/gripper/status" << std::endl;
+	ignmsg << "Subscriber initialised on " << this->robot_namespace+"/gripper/control" << std::endl;
 	// RCLCPP_INFO(this->ros_node_->get_logger(), "Publisher initialised on [%s]", this->dockStatusPub->get_topic_name());
 	// RCLCPP_INFO(this->ros_node_->get_logger(), "Subscriber initialised on [%s]", this->dockControlSub->get_topic_name());
 
@@ -93,11 +106,15 @@ void PickupPlugin::Configure(const gz::sim::Entity &_entity,
 	// 	RCLCPP_INFO(this->ros_node_->get_logger(), "Attempting to initially attach");
 	// 	this->initial_attaching_timer = this->ros_node_->create_wall_timer(std::chrono::duration<double>(0.1), [this](){this->attach();});
 	// }
+
+  	// Zzzzzz.
+  	// ignition::transport::waitForShutdown();
 }
 
 
 void PickupPlugin::OnControlMsg(const ignition::msgs::Boolean &_msg)
 {
+	ignerr << "Received Gripper Control Message" << std::endl;
 	if (_msg.data()) {
 		auto result = this->attach();
 		ignition::msgs::Boolean status_msg;
@@ -115,11 +132,35 @@ void PickupPlugin::PostUpdate(const gz::sim::UpdateInfo &_info, const gz::sim::E
 {
     // Your logic to check distance or conditions for attaching/detaching joints
     // Example: if (distance < threshold) { attachJoint(); }
-	ignmsg << "SampleSystem::PostUpdate" << std::endl;
+	// ignmsg << "SampleSystem::PostUpdate" << std::endl;
+
+	if (!this->_configured) {
+
+		auto _entity = this->model.Entity();
+
+		// // Retrieve the world entity as parent of this model
+		// Assumes the model is not nested... 
+		auto parent = _ecm.ParentEntity(_entity);
+
+		// ignerr << "Descendants of " << _entity << std::endl;
+		// for(gz::sim::Entity ents: _ecm.Descendants(_entity)) {
+		// 	auto obj = gz::sim::Model(ents);
+		// 	ignerr << "Found " << obj.Name(*this->ecm) << std::endl;
+		// }
+
+		// Set World here as ECM is not fully initialised
+		this->world = gz::sim::World(gz::sim::worldEntity(_ecm));
+
+		this->_configured = true;
+		ignerr << "PickupPlugin Configured"<< std::endl;
+		ignmsg << "PickupPlugin Configured"<< std::endl;
+	}
 }
 
 // Check for objects within a certain vertical and horizontal offset of the drone
 gz::sim::Entity PickupPlugin::findNearbyObject(){
+
+	ignerr << "Finding Nearby Objects" << std::endl;
 	
 	std::optional<gz::math::Pose3d> dronePose;
 	if (this->sensor_link.Entity() != gz::sim::kNullEntity) {
@@ -135,21 +176,31 @@ gz::sim::Entity PickupPlugin::findNearbyObject(){
 		return gz::sim::kNullEntity;	
 	}
 	
+	ignerr << "Finding Nearby Objects" << std::endl;
 
 	for(gz::sim::Entity ents: this->world.Models(*this->ecm)) {
 		auto obj = gz::sim::Model(ents);
 
+		ignerr << "Found " << obj.Name(*this->ecm) << std::endl;
+
 		if (obj.Entity() == this->model.Entity()) continue;
 
-		if (obj.Name(*this->ecm).find(this->pickup_object_allowable_prefix) != 0) continue;
+		// See if matches the prefix
+		std::string name = obj.Name(*this->ecm);
+		std::string prefix = this->pickup_object_allowable_prefix;
+		int prefix_loc = name.find(prefix);
+		// ignerr << "Checking " << name << " with " << prefix << ":" << n <<std::endl;
+		if (prefix_loc != 0) continue;
 
-		auto canonLink = gz::sim::Link(obj.CanonicalLink(*this->ecm));
-		auto pose = canonLink.WorldPose(*this->ecm);
-		if(!pose){ continue; }
+		auto canonLinkEntity = obj.CanonicalLink(*this->ecm);
+		auto pose = gz::sim::worldPose(canonLinkEntity, *this->ecm);
 
-		gz::math::Vector3d objPos = (*pose).Pos();
+		gz::math::Vector3d objPos = pose.Pos(); //(*pose).Pos();
 		double verticalOffset = dronePos.Z() - objPos.Z();
 		double horizontalOffset = hypot(objPos.X() - dronePos.X(), objPos.Y() - dronePos.Y());
+		
+		ignerr << "Checking Offsets v:" << verticalOffset << ", h:" << horizontalOffset << std::endl;
+		ignerr << "Allowable Offsets v:" << this->allowable_offset_height << ", h:" << this->allowable_offset_horizontal << std::endl;
 
 		if (verticalOffset > 0
 			&& verticalOffset <= this->allowable_offset_height 
@@ -167,20 +218,21 @@ bool PickupPlugin::attach() {
 	gz::sim::Entity ePayload = this->findNearbyObject();
 	if( ePayload == gz::sim::kNullEntity ) {
 		// Nothing found matching	
+		ignerr << "No Pickup Objects Found Nearby Matching " << this->pickup_object_allowable_prefix << std::endl;
 		return false;
 	} 
 
 	gz::sim::Model payload = gz::sim::Model(ePayload);
-	ignmsg << "Found Pickup Target " << payload.Name(*this->ecm) << std::endl;
+	ignerr << "Found Pickup Target " << payload.Name(*this->ecm) << std::endl;
 	// 		RCLCPP_INFO(this->ros_node_->get_logger(), "Found Pickup Target [%s]", payload->GetName().c_str());
 	
 
 	// 	// RCLCPP_INFO(this->ros_node_->get_logger(), "getting drone base link");
-	ignmsg << "getting drone base link" << std::endl;
+	ignerr << "getting drone base link" << std::endl;
 	auto child_link = gz::sim::Link(this->model.CanonicalLink(*this->ecm));
 
 	if (child_link.Entity() == gz::sim::kNullEntity){
-		ignmsg << "child link from drone is none, here is a list of links" << std::endl;
+		ignerr << "child link from drone is none, here is a list of links" << std::endl;
 		auto links1 = this->model.Links(*this->ecm);
 		for(auto a: links1){
 			auto name = gz::sim::Link(a).Name(*this->ecm);
@@ -190,20 +242,20 @@ bool PickupPlugin::attach() {
 	}
 
 	// RCLCPP_INFO(this->ros_node_->get_logger(), "getting payload base link");
-	ignmsg << "getting payload base link" << std::endl;
+	ignerr << "getting payload base link" << std::endl;
 	auto parent_link = gz::sim::Link(payload.CanonicalLink(*this->ecm));
 	if (parent_link.Entity() == gz::sim::kNullEntity){
-		ignmsg << "parent link from payload is none, here is a list of links" << std::endl;
+		ignerr << "parent link from payload is none, here is a list of links" << std::endl;
 		auto links1 = payload.Links(*this->ecm);
 		for(auto a: links1){
 			auto name = gz::sim::Link(a).Name(*this->ecm);
-			ignmsg << *name << std::endl;
+			ignerr << *name << std::endl;
 		}
 		return false;
 	}
 
-	if(joint.Entity() != gz::sim::kNullEntity ) {
-		ignmsg << "Already Attached" << std::endl;
+	if(this->joint.Entity() != gz::sim::kNullEntity ) {
+		ignerr << "Already Attached" << std::endl;
 		// if (this->initial_attaching_timer) {
 		// 	RCLCPP_INFO(this->ros_node_->get_logger(), "Initial attach succesful, timer cancelling");
 		// 	this->initial_attaching_timer->cancel();
@@ -213,7 +265,7 @@ bool PickupPlugin::attach() {
 
 	// Test if links are within docking tolerance
 	// RCLCPP_INFO(this->ros_node_->get_logger(), "Testing tolerance");
-	ignmsg << "Testing Tolerance" << std::endl;
+	ignerr << "Testing Tolerance" << std::endl;
 	auto poseOffset = *(parent_link.WorldPose(*this->ecm)) - *(child_link.WorldPose(*this->ecm));
 	bool inToleranceHeight = poseOffset.Pos().Z() < this->allowable_offset_height;
 	poseOffset.Pos().Z(0.0);
@@ -221,12 +273,12 @@ bool PickupPlugin::attach() {
 	bool inTolerance = inToleranceHeight && inToleranceHorizontal;
 
 	if(!inTolerance) {
-		ignmsg << "Drone not within object tolerance " << poseOffset.Pos().SquaredLength() << std::endl;
+		ignerr << "Drone not within object tolerance " << poseOffset.Pos().SquaredLength() << std::endl;
 		return false;
 	}
 
 // 	RCLCPP_INFO(this->ros_node_->get_logger(), "Creating new joint.");
-	ignmsg << "Creating New Joint" << std::endl;
+	ignerr << "Creating New Joint" << std::endl;
 	std::stringstream jointName;
 	jointName << "sim_dock_joint_" << jointCounter;
 
@@ -234,7 +286,21 @@ bool PickupPlugin::attach() {
 	this->ecm->CreateComponent( 
 		joint_entity,
 		gz::sim::components::DetachableJoint({parent_link.Entity(), child_link.Entity(), "fixed"}));
+	this->ecm->CreateComponent(joint_entity, gz::sim::components::Joint());
+	this->ecm->CreateComponent(joint_entity, gz::sim::components::ParentLinkName(*parent_link.Name(*this->ecm)));
+	this->ecm->CreateComponent(joint_entity, gz::sim::components::ChildLinkName(*child_link.Name(*this->ecm)));
+	this->ecm->CreateComponent(joint_entity, gz::sim::components::JointType(sdf::JointType::FIXED));
+	this->ecm->CreateComponent(joint_entity, gz::sim::components::Name(jointName.str()));
+	this->ecm->CreateComponent(joint_entity, gz::sim::components::ParentEntity(this->model.Entity()));
+
+	ignerr << "Created New Joint " << joint_entity << " with name " << jointName.str() << std::endl;
+
 	this->joint = gz::sim::Joint(joint_entity);
+	ignerr << "Joints within " << this->model.Name(*this->ecm) << std::endl;
+	for(gz::sim::Entity ents: this->model.Joints(*this->ecm)) {
+		auto obj = gz::sim::Joint(ents);
+		ignerr << "Found entity " << ents << " Name: " << *obj.Name(*this->ecm) << std::endl;
+	}
 
 // 	joint = this->model->CreateJoint(jointName.str(),"fixed",parent_link,child_link);
 // 	if( !joint ) {
@@ -256,10 +322,12 @@ bool PickupPlugin::detach() {
 		return true;
 	}
 // 	RCLCPP_INFO(this->ros_node_->get_logger(), "Detaching joint");
-	ignmsg << "Detaching Joint" << std::endl;
+	ignerr << "Detaching Joint" << std::endl;
 // 	this->joint->Fini();
+	this->ecm->RequestRemoveEntity(this->joint.Entity());
 	this->joint.~Joint();
 	this->joint = gz::sim::Joint(gz::sim::kNullEntity);
+	jointCounter--;
 	return true;
 }
 

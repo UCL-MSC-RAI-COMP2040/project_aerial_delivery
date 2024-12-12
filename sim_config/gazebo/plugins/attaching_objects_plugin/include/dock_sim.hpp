@@ -14,6 +14,13 @@
 #include <gz/sim/Util.hh>
 #include <gz/math.hh>
 #include <gz/sim/components/DetachableJoint.hh>
+#include <gz/sim/components/Name.hh>
+#include <gz/sim/components/ParentEntity.hh>
+#include <gz/sim/components/Joint.hh>
+#include <gz/sim/components/ParentLinkName.hh>
+#include <gz/sim/components/ChildLinkName.hh>
+#include <gz/sim/components/JointType.hh>
+#include <sdf/Joint.hh>
 // #include <gz/msgs/msgs.hh>
 // #include <gz/sensors/Sensor.hh>
 
@@ -26,8 +33,8 @@
 namespace gzplugin {
 
 class PickupPlugin : public gz::sim::System,
-                     public gz::sim::ISystemConfigure,
-                     public gz::sim::ISystemPostUpdate{
+                     public gz::sim::ISystemConfigure, //{
+                     public gz::sim::ISystemPostUpdate { 
     public:
         PickupPlugin();
         virtual ~PickupPlugin();
@@ -75,7 +82,9 @@ class PickupPlugin : public gz::sim::System,
         double allowable_offset_height = 0.15;
         double allowable_offset_horizontal = 0.2;
 
-        int jointCounter;
+        int jointCounter = 0;
+
+        bool _configured = false;
     };
 
 };
